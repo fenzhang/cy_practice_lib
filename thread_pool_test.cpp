@@ -1,5 +1,6 @@
 #include "thread_pool.h"
 #include <iostream>
+#include <string>
 #include <utility>
 template <class T> struct move_only_class
 {
