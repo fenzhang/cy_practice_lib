@@ -20,25 +20,29 @@ CXXFLAGS += -fmax-errors=8
 CXXFLAGS += -Wuseless-cast
 endif
 
+DEBUG ?= 1
 ifeq ($(DEBUG), 1)
 CXXFLAGS += -fsanitize=address,undefined,leak
+BUILD_DIR := build/debug
 else
 CXXFLAGS += -fomit-frame-pointer
 CXXFLAGS += -g0
 CPPFLAGS += -DNDEBUG
+BUILD_DIR := build/release
 endif
 
-BUILD_DIR := build
 BIN_DIR := $(BUILD_DIR)/bin
 OBJ_DIR := $(BUILD_DIR)/obj
 DEP_DIR := $(BUILD_DIR)/depend
 
 HEADERS := $(wildcard *.h)
-SOURCE := $(wildcard *.cpp)
-MAIN_TARGETS := thread_pool_test
+TEST_SOURCE := $(wildcard *_test.cpp)
+LIB_SOURCE := $(filter-out $(TEST_SOURCE),$(wildcard *.cpp))
 
-OBJECTS := $(SOURCE:%.cpp=$(OBJ_DIR)/%.o)
-EXECUTABLES := $(MAIN_TARGETS:%=$(BIN_DIR)/%.exe)
+TEST_OBJECTS := $(TEST_SOURCE:%.cpp=$(OBJ_DIR)/%.o)
+LIB_OBJECTS := $(LIB_SOURCE:%.cpp=$(OBJ_DIR)/%.o)
+OBJECTS := $(TEST_OBJECTS) $(LIB_OBJECTS)
+EXECUTABLES := $(TEST_SOURCE:%.cpp=$(BIN_DIR)/%.exe)
 
 DEPS := $(OBJECTS:$(OBJ_DIR)/%.o=$(DEP_DIR)/%.d)
 
@@ -58,7 +62,7 @@ $(OBJ_DIR):
 $(DEP_DIR):
 	mkdir -p $@
 
-$(EXECUTABLES): $(BIN_DIR)/%.exe: $(OBJECTS)
+$(EXECUTABLES): $(BIN_DIR)/%.exe: $(OBJ_DIR)/%.o $(LIB_OBJECTS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 $(OBJECTS): $(OBJ_DIR)/%.o: %.cpp
